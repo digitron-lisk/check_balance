@@ -4,7 +4,7 @@
 #
 #                         check_balance.sh - server side script to
 #                      monitor balance of your accounts - by digitron
-#                       alert by email (mail must be set up on server)
+#                      alert by email (mail must be set up on server)
 #           to run it every minute, enter new line in crontab (type crontab -e):
 #            * * * * * /bin/bash full-path-to-check_balance.sh >/dev/null 2>&1
 #
@@ -16,9 +16,9 @@ mail_address="example@test.mail"
 
 ##### get previous balance from file, if present
 if [ -f previous_balance ]
-	then
+then
 	previous_balance=$(<previous_balance)
-	else
+else
 	previous_balance=0
 fi
 
@@ -32,23 +32,24 @@ echo -e $log_mess >> $log_file
 
 ##### get current balance = total of all accounts
 for (( i=0; i<${#my_accounts[*]}; i++ ))
-        do
-                balance[$i]=$(curl -sm 1 '127.0.0.1:8000/api/accounts/getBalance?address='${my_accounts[$i]} | cut -d':' -f4 | tr -d '"}')
+do
+        balance[$i]=$(curl -sm 1 '127.0.0.1:8000/api/accounts/getBalance?address='${my_accounts[$i]} | cut -d':' -f4 | tr -d '"}')
 
-                ##### catch non-integer return
-                if [ ${balance[$i]} -ne ${balance[$i]} ] 2>/dev/null
-                then
-					balance[$i]=0
-                fi
+        ##### catch non-integer return
+        if [ ${balance[$i]} -ne ${balance[$i]} ] 2>/dev/null
+        then
+		balance[$i]=0
+        fi
 
-				balance_nice=$(echo ${balance[$i]} | awk '{printf "%.8f\n", $1/100000000}')
+	##### make balance human readable
+	balance_nice=$(echo ${balance[$i]} | awk '{printf "%.8f\n", $1/100000000}')
 				
-				##### add log entry
-				log_mess="${my_accounts[$i]} = $balance_nice"
-				echo -e $log_mess >> $log_file
+	##### add log entry
+	log_mess="${my_accounts[$i]} = $balance_nice"
+	echo -e $log_mess >> $log_file
 
-				current_balance=$((current_balance+balance[i]))
-        done
+		current_balance=$((current_balance+balance[i]))
+done
 
 ##### make balances human readable
 current_balance_nice=$(echo $current_balance | awk '{printf "%.8f\n", $1/100000000}')
